@@ -1,1 +1,2 @@
 print('bse')
+print('soo')
