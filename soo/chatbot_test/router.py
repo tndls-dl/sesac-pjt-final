@@ -4,8 +4,9 @@ def route_by_user_choice(state):
     """
     선택지 기반 추천과 챗봇 추천을 분기하는 예시 라우터 함수
     """
-    if hasattr(state, 'user_input') and state.user_input:
+    if getattr(state, 'user_input', None):
         return 'recommend_by_chatbot'
-    if hasattr(state, 'selected_category') and state.selected_category:
+    if getattr(state, 'selected_category', None):
         return 'recommend_by_selection'
-    return None
+    # 기본 경로나 예외 처리
+    return 'recommend_by_selection'
