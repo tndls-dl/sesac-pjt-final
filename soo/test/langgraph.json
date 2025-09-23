@@ -1,6 +1,6 @@
 {
     "graphs": {
-        "graph": "./graph.py:graph"
+        "chatbot_app": "./main.py:app"
     },
     "env": "./.env",
     "python_version": "3.13",
