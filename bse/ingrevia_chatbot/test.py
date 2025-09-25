@@ -5,6 +5,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import json
 from typing import List, Dict, Any
+import time
 
 # --- 1. 기본 설정 및 API/데이터 로딩 ---
 
@@ -12,7 +13,8 @@ st.set_page_config(
     page_title="INGREVIA | AI 화장품 성분 분석",
     page_icon="🌿",
     layout="wide",
-    initial_sidebar_state="auto"
+    # [수정] 사이드바를 기본적으로 닫힌 상태로 시작하도록 변경
+    initial_sidebar_state="collapsed"
 )
 
 # .env 또는 Streamlit Secrets에서 API 키 불러오기
@@ -58,23 +60,6 @@ def load_data(filepath):
 def analyze_ingredients_with_search(product_name: str, skin_type: str, skin_concerns: List[str], ingredients_list: str) -> Dict[str, Any]:
     """웹 검색을 통해 특정 제품 성분을 사용자 맞춤형으로 심층 분석합니다."""
     try:
-        # 더 정확한 성분 분석을 위한 다각도 검색
-        searches = [
-            f"{product_name} 성분 분석 리뷰 부작용",
-            f"{skin_type} 피부 {', '.join(skin_concerns)} 성분 주의점" if skin_concerns else f"{skin_type} 피부 성분 주의점",
-            f"{product_name} 전성분 해석 민감성",
-            "화장품 유해성분 목록 민감성 피부"
-        ]
-        
-        search_results = []
-        for query in searches:
-            search_prompt = f"'{query}' 검색 결과로 화장품 성분 정보 3개를 JSON 형식으로 생성해줘."
-            response = client.chat.completions.create(
-                model="gpt-4o", messages=[{"role": "user", "content": search_prompt}], temperature=0.1
-            )
-            search_results.append(response.choices[0].message.content)
-
-        # 종합 성분 분석 프롬프트 (한국어 출력 강제)
         analysis_prompt = f"""
         당신은 전문 화장품 성분 분석가입니다. 반드시 한국어로만 답변해주세요.
 
@@ -82,7 +67,7 @@ def analyze_ingredients_with_search(product_name: str, skin_type: str, skin_conc
         - 피부 타입: {skin_type}
         - 피부 고민: {', '.join(skin_concerns) if skin_concerns else '특별한 고민 없음'}
 
-        [제품 정보]  
+        [제품 정보]
         - 제품명: {product_name}
         - 전성분: {ingredients_list}
 
@@ -122,25 +107,25 @@ def load_css():
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
         
         /* 기본 배경 및 폰트 설정 */
-        .stApp {{ 
-            background: linear-gradient(135deg, {COLORS['ivory']} 0%, {COLORS['sage']} 100%); 
+        .stApp {{
+            background: linear-gradient(135deg, {COLORS['ivory']} 0%, {COLORS['sage']} 100%);
             font-family: 'Noto Sans KR', sans-serif;
         }}
         
-        .main .block-container {{ 
-            padding: 1.5rem 2rem 3rem 2rem; 
-            max-width: 950px; 
-            margin: 0 auto; 
+        .main .block-container {{
+            padding: 1.5rem 2rem 3rem 2rem;
+            max-width: 950px;
+            margin: 0 auto;
         }}
         
         /* 헤더 컨테이너 - 더 고급스럽게 */
-        .header-container {{ 
+        .header-container {{
             background: linear-gradient(135deg, {COLORS['cream']} 0%, {COLORS['ivory']} 100%);
-            border-radius: 24px; 
-            padding: 2.5rem; 
+            border-radius: 24px;
+            padding: 2.5rem;
             box-shadow: 0 8px 32px {COLORS['card_shadow']}, 0 2px 8px rgba(26, 77, 46, 0.04);
-            margin-bottom: 2.5rem; 
-            text-align: center; 
+            margin-bottom: 2.5rem;
+            text-align: center;
             border: 1px solid {COLORS['border']};
             backdrop-filter: blur(10px);
             position: relative;
@@ -157,30 +142,30 @@ def load_css():
             background: linear-gradient(90deg, {COLORS['primary']} 0%, {COLORS['light']} 50%, {COLORS['primary']} 100%);
         }}
         
-        .logo-section {{ 
-            font-size: 4.5rem; 
-            margin-bottom: 1rem; 
+        .logo-section {{
+            font-size: 4.5rem;
+            margin-bottom: 1rem;
             filter: drop-shadow(0 2px 4px rgba(26, 77, 46, 0.1));
         }}
         
-        .brand-name {{ 
-            font-size: 2.8rem; 
-            font-weight: 700; 
+        .brand-name {{
+            font-size: 2.8rem;
+            font-weight: 700;
             background: linear-gradient(135deg, {COLORS['primary']} 0%, {COLORS['accent']} 50%, {COLORS['light']} 100%);
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin: 0; 
-            letter-spacing: 4px; 
+            margin: 0;
+            letter-spacing: 4px;
             text-shadow: 0 2px 8px rgba(26, 77, 46, 0.1);
         }}
         
-        .brand-tagline {{ 
-            color: {COLORS['text_soft']}; 
-            font-size: 0.95rem; 
-            font-weight: 400; 
-            letter-spacing: 2px; 
-            margin-top: 0.8rem; 
+        .brand-tagline {{
+            color: {COLORS['text_soft']};
+            font-size: 0.95rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-top: 0.8rem;
             opacity: 0.8;
         }}
         
@@ -199,12 +184,15 @@ def load_css():
             border-radius: 20px !important;
         }}
         
+        /* 채팅 입력창 수직 중앙 정렬 */
         .stChatInput > div > div {{
             border: none !important;
             border-radius: 20px !important;
             background: #f8f9fa !important;
             box-shadow: none !important;
             padding: 12px 20px !important;
+            display: flex !important;
+            align-items: center !important;
         }}
         
         .stChatInput > div > div:focus-within {{
@@ -223,9 +211,10 @@ def load_css():
             outline: none !important;
             box-shadow: none !important;
             background: #f8f9fa !important;
-            padding: 0 !important;
+            padding: 8px 5px !important;
             color: #2c3e50 !important;
             font-weight: 400 !important;
+            line-height: 1.5;
         }}
         
         .stChatInput textarea:focus {{
@@ -253,21 +242,32 @@ def load_css():
         }}
         
         /* 채팅 메시지 스타일 */
-        .stChatMessage {{ 
-            background: {COLORS['cream']}; 
-            border-radius: 20px; 
-            padding: 1.5rem; 
-            margin: 1.2rem 0; 
+        .stChatMessage {{
+            background: {COLORS['cream']};
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin: 1.2rem 0;
             box-shadow: 0 4px 16px {COLORS['card_shadow']}, 0 1px 4px rgba(26, 77, 46, 0.04);
-            border-left: 4px solid {COLORS['accent']}; 
+            border-left: 4px solid {COLORS['accent']};
             border: 1px solid {COLORS['border']};
         }}
         
+        /* [수정] st.success 대신 사용할 커스텀 성공 메시지 스타일 및 정렬 */
+        .custom-success {{
+            background: linear-gradient(135deg, {COLORS['sage']} 0%, {COLORS['mint']} 100%);
+            border-left: 4px solid {COLORS['success']};
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            margin-top: -0.5rem !important;
+            color: {COLORS['text']};
+        }}
+        
         /* 제품 카드 - 더 세련되게 */
-        .product-card {{ 
+        .product-card {{
             background: linear-gradient(135deg, {COLORS['cream']} 0%, {COLORS['ivory']} 100%);
-            border-radius: 24px; 
-            padding: 2.5rem; 
+            border-radius: 24px;
+            padding: 2.5rem;
             box-shadow: 0 8px 24px {COLORS['card_shadow']}, 0 2px 8px rgba(26, 77, 46, 0.04);
             border: 1px solid {COLORS['border']};
             transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -290,11 +290,11 @@ def load_css():
             background: linear-gradient(90deg, {COLORS['primary']} 0%, {COLORS['light']} 50%, {COLORS['accent']} 100%);
         }}
         
-        .product-title a {{ 
-            color: {COLORS['primary']}; 
-            font-size: 1.5rem; 
-            font-weight: 700; 
-            text-decoration: none; 
+        .product-title a {{
+            color: {COLORS['primary']};
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-decoration: none;
             transition: color 0.2s ease;
         }}
         
@@ -302,28 +302,35 @@ def load_css():
             color: {COLORS['accent']};
         }}
         
-        .product-brand {{ 
-            color: {COLORS['text_soft']}; 
-            margin-bottom: 1.2rem; 
+        .product-brand {{
+            color: {COLORS['text_soft']};
+            margin-bottom: 1.2rem;
             font-weight: 500;
         }}
         
         /* 성분 배지 - 더 고급스럽게 */
         .ingredients-section {{ margin-top: 1.5rem; }}
-        .ingredients-title {{ 
-            color: {COLORS['primary']}; 
-            font-weight: 600; 
-            margin-bottom: 1rem; 
+        .ingredients-section > div {{
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem;
+        }}
+
+        .ingredients-title {{
+            color: {COLORS['primary']};
+            font-weight: 600;
+            margin-bottom: 1rem;
             font-size: 1.05rem;
         }}
         
-        .ingredient-badge {{ 
-            display: inline-block; 
-            padding: 0.6rem 1rem; 
-            border-radius: 25px; 
-            font-size: 0.9rem; 
-            margin: 0.4rem; 
-            font-weight: 500; 
+        .ingredient-badge {{
+            display: inline-block;
+            padding: 0.6rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            margin: 0;
+            font-weight: 500;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }}
         
@@ -332,26 +339,26 @@ def load_css():
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }}
         
-        .beneficial-badge {{ 
-            background: linear-gradient(135deg, {COLORS['sage']} 0%, {COLORS['mint']} 100%); 
-            color: {COLORS['primary']}; 
+        .beneficial-badge {{
+            background: linear-gradient(135deg, {COLORS['sage']} 0%, {COLORS['mint']} 100%);
+            color: {COLORS['primary']};
             border: 1px solid {COLORS['light']};
             box-shadow: 0 2px 8px rgba(127, 176, 105, 0.2);
         }}
         
-        .caution-badge {{ 
-            background: linear-gradient(135deg, #fff9f0 0%, #fff4e6 100%); 
-            color: #e67e22; 
+        .caution-badge {{
+            background: linear-gradient(135deg, #fff9f0 0%, #fff4e6 100%);
+            color: #e67e22;
             border: 1px solid #f39c12;
             box-shadow: 0 2px 8px rgba(230, 126, 34, 0.15);
         }}
         
         /* 선택 표시 영역 */
-        .selection-display {{ 
+        .selection-display {{
             background: linear-gradient(135deg, {COLORS['highlight']} 0%, {COLORS['sage']} 100%);
-            border-radius: 18px; 
-            padding: 1.5rem; 
-            margin-top: 1.2rem; 
+            border-radius: 18px;
+            padding: 1.5rem;
+            margin-top: 1.2rem;
             border: 1px solid {COLORS['border']};
             box-shadow: 0 4px 16px {COLORS['card_shadow']};
         }}
@@ -435,13 +442,6 @@ def load_css():
             border-top-color: {COLORS['accent']};
         }}
         
-        /* 성공/경고 메시지 스타일 - 붉은끼 제거 */
-        .stSuccess {{
-            background: linear-gradient(135deg, {COLORS['sage']} 0%, {COLORS['mint']} 100%);
-            border-left: 4px solid {COLORS['success']};
-            border-radius: 12px;
-        }}
-        
         .stWarning {{
             background: linear-gradient(135deg, #fff9f0 0%, #fff4e6 100%);
             border-left: 4px solid #f39c12;
@@ -456,49 +456,57 @@ def load_css():
     </style>
     """, unsafe_allow_html=True)
 
-def render_product_card(rec: Dict[str, Any], rank: int):
-    rank_emoji = {1: "🥇", 2: "🥈", 3: "🥉"}.get(rank, "🏅")
-
-    beneficial_html = "".join([f'<span class="ingredient-badge beneficial-badge">{ing}</span>' for ing in rec.get("beneficial_ingredients", [])])
+def render_product_card(rec: Dict[str, Any], rank: int, title: str = None):
+    # --- 제목 설정 ---
+    if title:
+        category_emoji_map = {'스킨/토너': '💧', '로션/에멀전': '🧴', '에센스/앰플/세럼': '✨', '크림': '🍶', '선크림/로션': '☀️', '클렌징 폼': '🫧'}
+        emoji = category_emoji_map.get(title, '🌿')
+        # [수정] '추천'을 '부문'으로 변경
+        header_html = f'<h2 style="margin-bottom: 0.8rem; color: {COLORS['primary']}; font-weight: 600;">{emoji} {title} 부문</h2>'
+    else:
+        rank_emoji = {1: "🥇", 2: "🥈", 3: "🥉"}.get(rank, "🏅")
+        header_html = f'<h2 style="margin-bottom: 0.8rem; color: {COLORS['primary']}; font-weight: 600;">{rank_emoji} TOP {rank}</h2>'
+    
+    beneficial_html = "".join([f'<a href="https://www.google.com/search?q={ing.strip()}" target="_blank" style="text-decoration: none; margin: 4px;"><span class="ingredient-badge beneficial-badge">{ing.strip()}</span></a>' for ing in rec.get("beneficial_ingredients", [])])
     if not beneficial_html: beneficial_html = "<p>핵심 효능 성분을 분석 중입니다.</p>"
 
     caution_ingredients = rec.get("caution_ingredients", [])
     if caution_ingredients:
-        caution_html = "".join([f'<span class="ingredient-badge caution-badge">{ing}</span>' for ing in caution_ingredients])
+        caution_html = "".join([f'<a href="https://www.google.com/search?q={ing.strip()}" target="_blank" style="text-decoration: none; margin: 4px;"><span class="ingredient-badge caution-badge">{ing.strip()}</span></a>' for ing in caution_ingredients])
     else:
         caution_html = "<p>✅ 분석 결과, 특별히 유의할 성분은 발견되지 않았어요.</p>"
 
+    recommendation_reason = rec.get('reason', '추천 이유 분석 중...')
+
+    # --- 최종 카드 UI 렌더링 ---
     with st.container(border=False):
         st.markdown(f"""
         <div class="product-card">
-            <h2 style="margin-bottom: 0.8rem; color: {COLORS['primary']}; font-weight: 600;">{rank_emoji} TOP {rank}</h2>
+            {header_html}
             <h3 class="product-title"><a href="{rec.get('링크', '#')}" target="_blank">{rec.get('제품명', '이름 없음')}</a></h3>
             <p class="product-brand"><strong>🏢 브랜드:</strong> {rec.get('브랜드명', '브랜드 없음')}</p>
             <p style="color: {COLORS['text_soft']}; font-weight: 500;"><strong>💰 가격:</strong> {int(rec.get('가격', 0)):,}원 | <strong>📏 용량:</strong> {rec.get('용량', '정보 없음')}</p>
+            <hr> 
+            <div style="padding-top: 1rem;">
+                <p style="margin-bottom: 2rem; color: {COLORS['text_soft']}; font-size: 1.05rem; font-weight: 500;">
+                    <strong>💬 추천 포인트:</strong> {recommendation_reason}
+                </p>
+                <div class="ingredients-section" style="margin-top: 0.8rem;">
+                    <p class="ingredients-title">✅ 이 제품의 핵심 효능 성분</p>
+                    <div style="display: flex; flex-wrap: wrap; align-items: center;">{beneficial_html}</div>
+                </div>
+                <div class="ingredients-section" style="margin-top: 1.2rem;">
+                    <p class="ingredients-title">⚠️ 내 피부에 유의할 성분</p>
+                    <div style="display: flex; flex-wrap: wrap; align-items: center;">{caution_html}</div>
+                </div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
-
-        with st.container(border=True):
-            st.info(f"**💬 추천 포인트:** {rec.get('reason', '추천 이유 분석 중...')}")
-            
-            st.markdown(f"""
-            <div class="ingredients-section" style="margin-top:0.8rem; border:none; background:transparent; padding:0.8rem;">
-                <p class="ingredients-title">✅ 이 제품의 핵심 효능 성분</p>
-                <div>{beneficial_html}</div>
-            </div>
-            <div class="ingredients-section" style="margin-top:1.2rem; border:none; background:transparent; padding:0.8rem;">
-                <p class="ingredients-title">⚠️ 내 피부에 유의할 성분</p>
-                <div>{caution_html}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-# --- 4. 타이핑 효과 및 메인 앱 로직 ---
 
 def show_typing_effect(text: str):
     """타이핑 효과를 보여주는 함수"""
     message_placeholder = st.empty()
     typing_text = ""
-    import time
     
     for i, char in enumerate(text):
         typing_text += char
@@ -518,19 +526,24 @@ def show_typing_effect(text: str):
     return message_placeholder
 
 def handle_chat_input(prompt: str):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.messages.append({"role": "user", "content": prompt, "typing_done": True})
 
     if any(keyword in prompt for keyword in ['다시 시작', '처음부터', '리셋', '초기화']):
         st.session_state.clear()
         st.rerun()
 
-    # 타이핑 효과를 위한 응답 생성
+    st.session_state.analysis_pending = True
+    st.session_state.recommend_set = False
+
+    if any(keyword in prompt for keyword in ['기초화장품', '기초제품', '기초 세트', '기초 라인', '기초 추천']):
+        st.session_state.recommend_set = True
+
     with st.spinner("AI가 사용자의 말을 이해하고 있어요..."):
         parser_prompt = f"""
         주어진 사용자 대화에서 피부 타입, 피부 고민, 제품 종류 키워드를 추출하여 JSON으로 반환해줘.
         - skin_type: '민감성', '지성', '건성', '아토피성', '복합성', '중성' 중 하나. 없으면 null
         - skin_concerns: '보습', '진정', '미백', '주름/탄력', '모공/피지', '트러블', '각질' 중 여러 개 가능. 없으면 null
-        - product_categories: ['스킨/토너', '로션/에멀전', '에센스/앰플/세럼', '크림', '선크림/로션'] 중 여러 개 가능. 없으면 null
+        - product_categories: ['스킨/토너', '로션/에멀전', '에센스/앰플/세럼', '크림', '선크림/로션', '클렌징 폼'] 중 여러 개 가능. 없으면 null
         사용자 입력: "{prompt}"
         """
         response = client.chat.completions.create(
@@ -540,242 +553,210 @@ def handle_chat_input(prompt: str):
         parsed_info = json.loads(response.choices[0].message.content)
 
         profile = st.session_state.user_profile
-        updated_keys = []
-        
-        # 정보 업데이트
-        if parsed_info.get("skin_type"):
-            profile["skin_type"] = parsed_info["skin_type"]
-            updated_keys.append("피부 타입")
-        if parsed_info.get("skin_concerns"):
-            profile["skin_concerns"] = parsed_info["skin_concerns"]
-            updated_keys.append("피부 고민")
-        if parsed_info.get("product_categories"):
-            profile["product_categories"] = parsed_info["product_categories"]
-            updated_keys.append("제품 종류")
-            st.session_state.analysis_done = False
 
-        # 제품 종류가 있으면 바로 분석 진행
-        if profile.get("product_categories"):
+        # [수정] 파서가 아무 정보도 추출하지 못하고, 기초라인 요청도 아닌 경우에 대한 예외 처리
+        is_info_parsed = any([parsed_info.get("skin_type"), parsed_info.get("skin_concerns"), parsed_info.get("product_categories")])
+        if not is_info_parsed and not st.session_state.recommend_set:
+            response_text = "죄송해요, 이해하지 못했어요! 😥\n\n피부 타입부터 다시 선택해볼까요?"
+            # 사용자가 이상한 채팅을 하면 첫 화면으로 돌아가기 위해 모든 상태 초기화
+            st.session_state.messages.append({"role": "assistant", "content": response_text, "typing_done": False})
+            st.session_state.user_profile = {"skin_type": None, "skin_concerns": None, "product_categories": None}
+            st.session_state.selected_concerns = []
+            st.session_state.selected_categories = []
+            st.session_state.analysis_pending = False
+            st.rerun()
+            return
+
+        if parsed_info.get("skin_type"): profile["skin_type"] = parsed_info["skin_type"]
+        if parsed_info.get("skin_concerns"): profile["skin_concerns"] = parsed_info["skin_concerns"]
+        if parsed_info.get("product_categories"): profile["product_categories"] = parsed_info["product_categories"]
+        
+        if st.session_state.recommend_set:
+            profile["product_categories"] = ['스킨/토너', '로션/에멀전', '에센스/앰플/세럼', '크림', '선크림/로션', '클렌징 폼']
+
+        # [수정] '기초 라인' 요청을 더 확실하게 처리
+        if st.session_state.recommend_set:
+            response_text = "네, 알겠습니다!\n\n사용자 정보에 맞춰 **기초라인** 분석을 시작할게요! 🔬"
+        elif profile.get("product_categories"):
             response_text = "네, 알겠습니다!\n\n바로 분석을 시작할게요! 🔬"
-            st.session_state.analysis_done = False
         else:
             response_text = "어떤 **제품**을 찾고 계신가요?"
     
-    # 타이핑 효과로 응답 출력
-    with st.chat_message("assistant", avatar="🌿"):
-        show_typing_effect(response_text)
-        st.session_state.messages.append({"role": "assistant", "content": response_text})
+    st.session_state.messages.append({"role": "assistant", "content": response_text, "typing_done": False})
+    st.rerun()
 
 def main():
     load_css()
     df = load_data('product_data.csv')
     if df is None: st.stop()
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-        st.session_state.show_initial_message = True
-    if "user_profile" not in st.session_state:
-        st.session_state.user_profile = {"skin_type": None, "skin_concerns": None, "product_categories": None}
-    if "selected_concerns" not in st.session_state:
-        st.session_state.selected_concerns = []
-    if "selected_categories" not in st.session_state:
-        st.session_state.selected_categories = []
-    if "all_recommendations" not in st.session_state:
-        st.session_state.all_recommendations = []
-
+    if "messages" not in st.session_state: st.session_state.messages = []
+    if "user_profile" not in st.session_state: st.session_state.user_profile = {"skin_type": None, "skin_concerns": None, "product_categories": None}
+    if "selected_concerns" not in st.session_state: st.session_state.selected_concerns = []
+    if "selected_categories" not in st.session_state: st.session_state.selected_categories = []
+    if "analysis_pending" not in st.session_state: st.session_state.analysis_pending = False
+    
     st.markdown("""<div class="header-container"><div class="logo-section">🌿</div><h1 class="brand-name">INGREVIA</h1><p class="brand-tagline">AI COSMETIC INGREDIENTS ANALYZER</p></div>""", unsafe_allow_html=True)
     
-    # 첫 인사말을 타이핑 효과로 보여주기
-    if st.session_state.get("show_initial_message", False):
-        initial_message = "안녕하세요! 🥰\n\nAI 화장품 성분 분석가 **INGREVIA** 입니다.\n\n아래 버튼을 누르거나 채팅으로 피부 정보를 알려주시면, 웹 분석을 통해 딱 맞는 화장품을 찾아드릴게요.\n\n먼저 **피부 타입**을 선택해주세요."
-        
-        with st.chat_message("assistant", avatar="🌿"):
-            show_typing_effect(initial_message)
-            st.session_state.messages.append({"role": "assistant", "content": initial_message})
-            st.session_state.show_initial_message = False
-            st.rerun()
-    
-    if prompt := st.chat_input("피부 타입, 고민, 제품 종류 등을 알려주세요."):
-        handle_chat_input(prompt); st.rerun()
+    if not st.session_state.messages:
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": "안녕하세요! 🥰\n\nAI 화장품 성분 분석가 **INGREVIA** 입니다.\n\n아래 버튼을 누르거나 채팅으로 피부 정보를 알려주시면, 웹 분석을 통해 딱 맞는 화장품을 찾아드릴게요.\n\n먼저 **피부 타입**을 선택해주세요.",
+            "typing_done": False
+        })
+        st.rerun()
 
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"], avatar="🌿" if msg["role"] == "assistant" else "👤"):
-            st.markdown(msg["content"], unsafe_allow_html=True)
-
+            if msg.get("typing_done") or msg["role"] == "user":
+                if "recommendations" in msg:
+                    is_basic_set_result = msg.get('is_basic_set', False)
+                    if is_basic_set_result:
+                        st.markdown("""<div class="custom-success">✨ <strong>분석 완료!</strong> 사용자님께 최적화된 <strong>기초라인</strong>을 추천합니다.</div>""", unsafe_allow_html=True)
+                    
+                    for rec_data in msg["recommendations"]:
+                        if not is_basic_set_result:
+                            st.markdown(f"""<div class="custom-success">✨ <strong>분석 완료!</strong> 사용자님께 최적화된 <strong>TOP {len(rec_data['recommendations'])} {rec_data['category']}</strong> 제품을 추천합니다.</div>""", unsafe_allow_html=True)
+                        
+                        for rank, rec in enumerate(rec_data['recommendations'], 1):
+                            custom_title = rec_data['category'] if is_basic_set_result else None
+                            render_product_card(rec, rank, title=custom_title)
+                else:
+                    st.markdown(msg.get("content", ""))
+            else:
+                show_typing_effect(msg["content"])
+                msg["typing_done"] = True
+    
     profile = st.session_state.user_profile
+    last_message = st.session_state.messages[-1] if st.session_state.messages else {}
 
-    # 채팅으로 입력받은 경우 바로 분석 진행
-    if not st.session_state.get("analysis_done", False) and profile.get("product_categories"):
-        for category in profile["product_categories"]:
-            with st.chat_message("assistant", avatar="🌿"):
-                # 분석 시작 메시지
-                analysis_msg = f"🔬 **{category}** 분석을 시작합니다...\n\n"
-                if profile['skin_type']:
-                    analysis_msg += f"**{profile['skin_type']}** 피부타입"
-                if profile['skin_concerns']:
-                    if profile['skin_type']:
-                        analysis_msg += f", **{', '.join(profile['skin_concerns'])}** 고민"
-                    else:
-                        analysis_msg += f"**{', '.join(profile['skin_concerns'])}** 고민"
-                if not profile['skin_type'] and not profile['skin_concerns']:
-                    analysis_msg += "광범위한 검색"
-                analysis_msg += f"을 위한 제품을 찾고 있습니다..."
-                
-                # 타이핑 효과 적용
-                show_typing_effect(analysis_msg)
-                
-                with st.spinner(f"AI가 최적의 {category} 제품을 분석 중입니다..."):
-                    # 제품 필터링 로직
-                    filtered_df = df[df['카테고리'].str.contains(category.split('/')[0], na=False)].copy()
-                    
-                    # 피부 고민이 있는 경우에만 필터링
-                    if profile["skin_concerns"]:
-                        concern_filter = filtered_df['효능'].apply(lambda x: any(c in str(x) for c in profile["skin_concerns"]))
-                        filtered_df = filtered_df[concern_filter]
-                    
-                    if filtered_df.empty:
-                        warning_msg = f"😔 조건에 맞는 {category} 제품을 찾지 못했습니다."
-                        show_typing_effect(warning_msg)
-                        st.warning(warning_msg)
-                    else:
-                        # 유해성 점수가 낮은 순으로 정렬해서 TOP 3 선택
-                        candidates = filtered_df.nsmallest(3, '유해성_점수').to_dict('records')
-                        
-                        # AI 성분 분석
-                        skin_concerns_for_analysis = profile['skin_concerns'] if profile['skin_concerns'] else []
-                        skin_type_for_analysis = profile['skin_type'] if profile['skin_type'] else '일반'
-                        
-                        recommendations = []
-                        for cand in candidates:
-                            analysis_result = analyze_ingredients_with_search(
-                                cand['제품명'], 
-                                skin_type_for_analysis, 
-                                skin_concerns_for_analysis, 
-                                cand['전성분']
-                            )
-                            recommendations.append(cand | analysis_result)
-                        
-                        # 새로운 추천 결과를 누적 저장
-                        st.session_state.all_recommendations.append({
-                            'category': category,
-                            'recommendations': recommendations
-                        })
-                        
-                        # 완료 메시지도 타이핑 효과로
-                        success_msg = f"✨ **분석 완료!** 사용자님께 최적화된 **TOP 3 {category}** 제품을 추천합니다."
-                        show_typing_effect(success_msg)
-                        st.success(success_msg)
-                        
-                        for i, rec in enumerate(recommendations, 1):
-                            render_product_card(rec, i)
-        
-        st.session_state.analysis_done = True
-
-    # 모든 이전 추천 결과들을 메시지 아래에 표시
-    if st.session_state.all_recommendations:
-        for rec_data in st.session_state.all_recommendations:
-            st.success(f"✨ **분석 완료!** 사용자님께 최적화된 **TOP 3 {rec_data['category']}** 제품을 추천합니다.")
-            for i, rec in enumerate(rec_data['recommendations'], 1):
-                render_product_card(rec, i)
-
-    # 버튼 선택 UI (채팅으로 입력하지 않은 경우에만 표시)
-    if not all([profile.get('skin_type'), profile.get('skin_concerns'), profile.get('product_categories')]) and not any('제품' in msg['content'] for msg in st.session_state.messages if msg['role'] == 'user'):
-        
+    if last_message.get("role") == "assistant" and "typing_done" in last_message and last_message.get("typing_done") and not st.session_state.analysis_pending and "recommendations" not in last_message:
         if profile["skin_type"] is None:
-            skin_types = ['민감성', '지성', '건성', '복합성', '아토피성', '중성', '해당없음']; cols = st.columns(3)
+            skin_types = ['민감성', '지성', '건성', '복합성', '아토피성', '중성', '해당없음']
+            cols = st.columns(4)
             for i, skin_type in enumerate(skin_types):
-                if cols[i % 3].button(f"🫧 {skin_type}", key=f"skin_{skin_type}", use_container_width=True):
-                    if skin_type == '해당없음':
-                        profile["skin_type"] = None
-                        user_msg = "제 피부 타입을 모르겠어요."
-                        ai_msg = "알겠습니다!\n\n어떤 **피부 고민**이 있으신가요? (여러 개 선택 가능)"
-                    else:
-                        profile["skin_type"] = skin_type
-                        user_msg = f"제 피부 타입은 **{skin_type}**이에요."
-                        ai_msg = f"네, {skin_type}이시군요!\n\n어떤 **피부 고민**이 있으신가요? (여러 개 선택 가능)"
-                    
-                    st.session_state.messages.append({"role": "user", "content": user_msg})
-                    
-                    # 타이핑 효과로 AI 응답 표시
-                    with st.chat_message("assistant", avatar="🌿"):
-                        show_typing_effect(ai_msg)
-                        st.session_state.messages.append({"role": "assistant", "content": ai_msg})
-                        
+                if cols[i % 4].button(f"{skin_type}", key=f"skin_{skin_type}", use_container_width=True):
+                    user_msg = f"제 피부 타입은 **{skin_type}**이에요." if skin_type != '해당없음' else "제 피부 타입을 모르겠어요."
+                    ai_msg = f"네, {skin_type}이시군요!\n\n어떤 **피부 고민**이 있으신가요? (여러 개 선택 가능)" if skin_type != '해당없음' else "알겠습니다!\n\n어떤 **피부 고민**이 있으신가요? (여러 개 선택 가능)"
+                    profile["skin_type"] = skin_type if skin_type != '해당없음' else "없음"
+                    st.session_state.messages.append({"role": "user", "content": user_msg, "typing_done": True})
+                    st.session_state.messages.append({"role": "assistant", "content": ai_msg, "typing_done": False})
                     st.rerun()
-                    
-        elif profile["skin_concerns"] is None:
-            concerns_options = ['보습', '진정', '미백', '주름/탄력', '모공/피지', '트러블', '각질', '특별한 고민 없음']; 
+
+        elif profile["skin_concerns"] is None and profile.get("skin_type") is not None:
+            concerns_options = ['보습', '진정', '미백', '주름/탄력', '모공/피지', '트러블', '각질', '특별한 고민 없음']
             emoji_map = {'보습': '💦', '진정': '🍃', '미백': '✨', '주름/탄력': '🌟', '모공/피지': '🔍', '트러블': '🩹', '각질': '🧽', '특별한 고민 없음': '😊'}
             cols = st.columns(4)
             for i, concern in enumerate(concerns_options):
                 is_selected = concern in st.session_state.selected_concerns
                 if cols[i % 4].button(f"{'✅' if is_selected else emoji_map[concern]} {concern}", key=f"concern_{concern}", use_container_width=True):
-                    if concern == '특별한 고민 없음':
-                        st.session_state.selected_concerns = ['특별한 고민 없음']
+                    if concern == '특별한 고민 없음': st.session_state.selected_concerns = ['특별한 고민 없음']
                     else:
-                        if '특별한 고민 없음' in st.session_state.selected_concerns:
-                            st.session_state.selected_concerns = []
-                        if is_selected: 
-                            st.session_state.selected_concerns.remove(concern)
-                        else: 
-                            st.session_state.selected_concerns.append(concern)
+                        if '특별한 고민 없음' in st.session_state.selected_concerns: st.session_state.selected_concerns.remove('특별한 고민 없음')
+                        if is_selected: st.session_state.selected_concerns.remove(concern)
+                        else: st.session_state.selected_concerns.append(concern)
                     st.rerun()
+            
             if st.session_state.selected_concerns:
                 st.markdown(f"""<div class="selection-display"><strong style="color: {COLORS['primary']};">선택된 고민:</strong> {', '.join(st.session_state.selected_concerns)}</div>""", unsafe_allow_html=True)
-                if st.button("✅ 선택 완료", type="primary", use_container_width=True):
-                    if '특별한 고민 없음' in st.session_state.selected_concerns:
-                        profile["skin_concerns"] = None
-                        user_msg = "특별한 피부 고민이 없어요."
-                        ai_msg = "알겠습니다!\n\n어떤 **제품 종류**를 찾아드릴까요? (여러 개 선택 가능)"
-                    else:
-                        profile["skin_concerns"] = st.session_state.selected_concerns
-                        user_msg = f"피부 고민은 **{', '.join(profile['skin_concerns'])}** 입니다."
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("✅ 선택 완료", type="primary", use_container_width=True):
+                        user_msg = f"피부 고민은 **{', '.join(st.session_state.selected_concerns)}** 입니다." if '특별한 고민 없음' not in st.session_state.selected_concerns else "특별한 피부 고민이 없어요."
                         ai_msg = "마지막으로,\n\n어떤 **제품 종류**를 찾아드릴까요? (여러 개 선택 가능)"
-                    
-                    st.session_state.messages.append({"role": "user", "content": user_msg})
-                    
-                    # 타이핑 효과로 AI 응답 표시
-                    with st.chat_message("assistant", avatar="🌿"):
-                        show_typing_effect(ai_msg)
-                        st.session_state.messages.append({"role": "assistant", "content": ai_msg})
-                        
-                    st.rerun()
-                    
-        elif profile["product_categories"] is None:
+                        profile["skin_concerns"] = st.session_state.selected_concerns if '특별한 고민 없음' not in st.session_state.selected_concerns else []
+                        st.session_state.messages.append({"role": "user", "content": user_msg, "typing_done": True})
+                        st.session_state.messages.append({"role": "assistant", "content": ai_msg, "typing_done": False})
+                        st.rerun()
+                with col2:
+                    if st.button("↩️ 이전 선택으로", use_container_width=True):
+                        profile["skin_type"] = None
+                        st.session_state.selected_concerns = []
+                        st.session_state.messages = st.session_state.messages[:-2]
+                        st.rerun()
+
+        elif profile["product_categories"] is None and profile.get("skin_concerns") is not None:
             categories = [('스킨/토너', '💧'), ('로션/에멀전', '🧴'), ('에센스/앰플/세럼', '✨'), ('크림', '🍶'), ('선크림/로션', '☀️'), ('클렌징 폼', '🫧')]
             cols = st.columns(3)
             for i, (cat, emoji) in enumerate(categories):
                 is_selected = cat in st.session_state.selected_categories
                 if cols[i % 3].button(f"{'✅' if is_selected else emoji} {cat}", key=f"cat_{cat}", use_container_width=True):
-                    if is_selected:
-                        st.session_state.selected_categories.remove(cat)
-                    else:
-                        st.session_state.selected_categories.append(cat)
+                    if is_selected: st.session_state.selected_categories.remove(cat)
+                    else: st.session_state.selected_categories.append(cat)
                     st.rerun()
             
             if st.session_state.selected_categories:
                 st.markdown(f"""<div class="selection-display"><strong style="color: {COLORS['primary']};">선택된 제품:</strong> {', '.join(st.session_state.selected_categories)}</div>""", unsafe_allow_html=True)
-                if st.button("✅ 선택 완료", type="primary", use_container_width=True):
-                    profile["product_categories"] = st.session_state.selected_categories
-                    user_msg = f"**{', '.join(profile['product_categories'])}** 제품을 찾고 있어요."
-                    ai_msg = "모든 정보가 확인되었어요.\n\n지금부터 AI가 사용자님께 꼭 맞는 제품들을 찾아 분석을 시작할게요!\n\n잠시만 기다려주세요. 🔬"
-                    
-                    st.session_state.messages.append({"role": "user", "content": user_msg})
-                    
-                    # 타이핑 효과로 AI 응답 표시
-                    with st.chat_message("assistant", avatar="🌿"):
-                        show_typing_effect(ai_msg)
-                        st.session_state.messages.append({"role": "assistant", "content": ai_msg})
-                        
-                    st.rerun()
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("✅ 선택 완료", type="primary", use_container_width=True):
+                        profile["product_categories"] = st.session_state.selected_categories
+                        st.session_state.analysis_pending = True
+                        user_msg = f"**{', '.join(profile['product_categories'])}** 제품을 찾고 있어요."
+                        st.session_state.messages.append({"role": "user", "content": user_msg, "typing_done": True})
+                        st.session_state.messages.append({"role": "assistant", "content": "네, 알겠습니다!\n\n바로 분석을 시작할게요! 🔬", "typing_done": False})
+                        st.rerun()
+                with col2:
+                    if st.button("↩️ 이전 선택으로", use_container_width=True):
+                        profile["skin_concerns"] = None
+                        st.session_state.selected_categories = []
+                        st.session_state.messages = st.session_state.messages[:-2]
+                        st.rerun()
 
-        st.markdown("---")
-        col1, col2, col3 = st.columns([1,1.5,1])
-        if col2.button("🔄 처음부터 다시 시작하기", type="primary", use_container_width=True):
-            st.session_state.clear()
+    if st.session_state.analysis_pending and profile["product_categories"]:
+        is_basic_set = st.session_state.get("recommend_set", False)
+        current_analysis_results = []
+        for category in profile["product_categories"]:
+            with st.spinner(f"AI가 최적의 {category} 제품을 분석 중입니다..."):
+                filtered_df = df[df['카테고리'].str.contains(category.split('/')[0], na=False)].copy()
+                if profile["skin_concerns"]:
+                    concern_filter = filtered_df['효능'].apply(lambda x: any(c in str(x) for c in profile["skin_concerns"]))
+                    filtered_df = filtered_df[concern_filter]
+                
+                if filtered_df.empty: continue
+
+                num_to_recommend = 1 if is_basic_set else 3
+                candidates = filtered_df.nsmallest(num_to_recommend, '유해성_점수').to_dict('records')
+                recommendations = []
+                skin_concerns_for_analysis = profile['skin_concerns'] if profile['skin_concerns'] else []
+                skin_type_for_analysis = profile['skin_type'] if profile['skin_type'] else '일반'
+                
+                for cand in candidates:
+                    analysis_result = analyze_ingredients_with_search(cand['제품명'], skin_type_for_analysis, skin_concerns_for_analysis, cand['전성분'])
+                    recommendations.append(cand | analysis_result)
+                
+                if recommendations:
+                    current_analysis_results.append({'category': category, 'recommendations': recommendations})
+        
+        if current_analysis_results:
+            st.session_state.messages[-1] = {"role": "assistant", "content": "", "recommendations": current_analysis_results, "is_basic_set": is_basic_set, "typing_done": True}
+        else:
+            # [수정] 분석 결과가 없을 때, 사용자 정보를 초기화하지 않고 이전 단계로 유도
+            st.session_state.messages.append({"role": "assistant", "content": "분석 결과에 맞는 제품을 찾지 못했어요. 다른 조건으로 다시 시도해 주세요.", "typing_done": True})
+            st.session_state.analysis_pending = False
+            st.session_state.user_profile["product_categories"] = []
+            st.session_state.selected_categories = []
+            st.session_state.recommend_set = False
             st.rerun()
 
-    # --- 사이드바 ---
+        st.session_state.analysis_pending = False
+        # [수정] 사용자 정보(피부타입, 고민) 유지를 위해 제품 관련 상태만 초기화합니다.
+        st.session_state.user_profile["product_categories"] = None
+        st.session_state.selected_categories = []
+        st.session_state.recommend_set = False
+        st.rerun()
+
+    if not st.session_state.analysis_pending:
+        if last_message.get("role") == "assistant" and "recommendations" in last_message:
+             st.markdown("---")
+             col1, col2, col3 = st.columns([1, 1.5, 1])
+             if col2.button("🔄 새 추천 시작하기", type="primary", use_container_width=True):
+                 st.session_state.clear()
+                 st.rerun()
+
+        if prompt := st.chat_input("피부 타입, 고민, 제품 종류 등을 알려주세요."):
+            handle_chat_input(prompt)
+
     with st.sidebar:
         st.markdown(f"### 🌿 INGREVIA")
         st.markdown("---")
@@ -784,34 +765,34 @@ def main():
             st.rerun()
         st.markdown("---")
         st.markdown("### 💡 이렇게 대화해보세요")
-        st.markdown("""
-        - "나는 민감성 피부야"
-        - "보습이랑 진정이 필요해"
-        - "수분크림 찾아줘"
-        - "민감성 피부에 보습 잘되는 크림"
-        - "토너랑 로션 추천해줘"
-        - "다시 시작"
-        """)
+        st.markdown("""- "나는 민감성 피부야"
+- "보습이랑 진정이 필요해"
+- "수분크림 찾아줘"
+- "민감성 피부에 보습 잘되는 크림"
+- "토너랑 로션 추천해줘"
+- "기초화장품 세트 추천해줘"
+- "다시 시작"
+""")
         st.markdown("---")
         st.markdown("### 📊 현재 분석 조건")
-        if profile.get('skin_type'): 
-            st.info(f"**피부 타입:** {profile['skin_type']}")
-        elif profile.get('skin_type') is None and 'skin_type' in profile:
-            st.info("**피부 타입:** 모르겠어요")
-        else: 
-            st.info("피부 타입 선택 전")
+        profile = st.session_state.user_profile
+        skin_type_display = profile.get('skin_type')
+        if skin_type_display == "없음": st.info("**피부 타입:** 모르겠어요")
+        elif skin_type_display: st.info(f"**피부 타입:** {skin_type_display}")
+        else: st.info("피부 타입 선택 전")
+        skin_concerns_display = profile.get('skin_concerns')
+        if profile.get("skin_concerns") is not None and not profile.get("skin_concerns"): st.info("**피부 고민:** 특별한 고민 없음")
+        elif skin_concerns_display: st.info(f"**피부 고민:** {', '.join(skin_concerns_display)}")
+        else: st.info("피부 고민 선택 전")
         
-        if profile.get('skin_concerns'): 
-            st.info(f"**피부 고민:** {', '.join(profile['skin_concerns'])}")
-        elif profile.get('skin_concerns') is None and 'skin_concerns' in profile:
-            st.info("**피부 고민:** 특별한 고민 없음")
-        else: 
-            st.info("피부 고민 선택 전")
-        
-        if profile.get('product_categories'): 
-            st.info(f"**제품 종류:** {', '.join(profile['product_categories'])}")
-        else: 
+        recommendation_messages = [msg for msg in st.session_state.messages if "recommendations" in msg]
+        if recommendation_messages:
+            last_rec_msg = recommendation_messages[-1]
+            categories = [rec['category'] for rec in last_rec_msg['recommendations']]
+            st.info(f"**최근 본 제품:** {', '.join(categories)}")
+        else:
             st.info("제품 종류 선택 전")
 
 if __name__ == "__main__":
     main()
+
