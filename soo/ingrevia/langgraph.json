@@ -1,0 +1,10 @@
+{
+    "graphs": {
+        "chatbot_app": "./main.py:app"
+    },
+    "env": "./.env",
+    "python_version": "3.13",
+    "dependencies": [
+        "."
+    ]
+}
