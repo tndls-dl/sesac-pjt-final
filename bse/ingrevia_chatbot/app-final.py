@@ -601,7 +601,7 @@ def main():
     if not st.session_state.messages:
         st.session_state.messages.append({
             "role": "assistant",
-            "content": "안녕하세요! 🥰\n\nAI 화장품 성분 분석가 **INGREVIA** 입니다.\n\n아래 버튼을 누르거나 채팅으로 피부 정보를 알려주시면, 웹 분석을 통해 딱 맞는 화장품을 찾아드릴게요.\n\n먼저 **피부 타입**을 선택해주세요.",
+            "content": "안녕하세요! 🥰\n\nAI 화장품 성분 분석가 **INGREVIA** 입니다. 🌿\n\n아래 버튼을 누르거나 채팅으로 피부 정보를 알려주시면, 웹 분석을 통해 딱 맞는 화장품을 찾아드릴게요. 💉\n\n먼저 **피부 타입**을 선택해주세요.",
             "typing_done": False
         })
         st.rerun()
