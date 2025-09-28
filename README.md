@@ -1,6 +1,6 @@
 # 🌿 Ingrevia: 내 피부를 위한 현명한 질문의 시작
 
-![ingrevia_mockup](https://raw.githubusercontent.com/tndls-dl/sesac-pjt-final/refs/heads/main/src/ingrevia_mockup.png)
+![ingrevia_mockup](https://raw.githubusercontent.com/tndls-dl/sesac-pjt-final/refs/heads/main/src/ingrevia_mockup.gif)
 
 
 **Ingrevia**는 *Ingredient + Via*의 합성어로, 
@@ -110,7 +110,7 @@ sesac-pjt-final/
 </div>
 
 ### 🧩 역할 분담
-🤝 **함꼐 한 일**
+🤝 **함께 한 일**
 - 제품 데이터 수집, 정제 및 데이터 보강
     - 💻 product_data.csv 및 json
 
