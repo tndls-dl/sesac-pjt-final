@@ -129,6 +129,16 @@ sesac-pjt-final/
 - 랭체인을 통해 챗봇 구성하기 (랭스미스 연결)
     - 💻ingrevia/
 
+---
+## 🌿 프로젝트 내용
+### streamlit
+
+**버튼 기능 사용**
+| 실행 화면 | 설명 |
+| --------- | ---- |
+| ![gif1](https://raw.githubusercontent.com/tndls-dl/sesac-pjt-final/refs/heads/main/src/ingrevia_1.gif) | 버튼으로 **피부 타입 · 고민 · 카테고리**를 선택 가능 |
+| ![gif2](https://raw.githubusercontent.com/tndls-dl/sesac-pjt-final/refs/heads/main/src/ingrevia_2.gif) | 선택 결과에 따라 요약 정보를 카드 형태로 나타냄 |
+
 
 ---
 ## 🚀 확장 가능성
