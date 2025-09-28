@@ -163,7 +163,7 @@ sesac-pjt-final/
 
 ---
 
-## 👩‍💻 개발 과정
+## 👩‍💻 진행 과정
 
 <div align="center">
 
@@ -180,7 +180,14 @@ sesac-pjt-final/
 2) **Streamlit (bse/ingrevia_chatbot)**: 웹 인터페이스 실행 
 
 ### 1. 공통 준비 단계
-1. 라이브러리 설치
+- 레포지토리 클론 및 이동
+
+    ```bash
+    git clone https://github.com/tndls-dl/sesac-pjt-final.git
+    cd sesac-pjt-final
+    ```
+
+- 라이브러리 설치
 
    ```bash
    pip install -r requirements.txt
@@ -193,10 +200,10 @@ sesac-pjt-final/
     ```
 
 ### 2. LangSmith 실행
-- 레포지토리 클론
+- 폴더 이동
+
     ```bash
-    git clone https://github.com/tndls-dl/sesac-pjt-final.git
-    cd sesac-pjt-final/soo/ingrevia
+    cd soo/ingrevia
     ```
 
 - 실행
@@ -205,10 +212,10 @@ sesac-pjt-final/
     ```
 
 ### 3. Streamlit 실행
-- 레포지토리 클론
+- 폴더 이동
+
     ```bash
-    git clone https://github.com/tndls-dl/sesac-pjt-final.git
-    cd sesac-pjt-final/bse/ingrevia_chatbot
+    cd bse/ingrevia_chatbot
     ```
 
 - 실행
@@ -413,8 +420,6 @@ LangSmith를 통해 대화 흐름과 노드 실행을 추적하고, 다양한 �
 - LangSmith를 통한 대화 흐름 설계 및 디버깅
 - Streamlit으로 사용자 친화적 인터페이스 구축
 
-
----
 
 ---
 
