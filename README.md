@@ -1,31 +1,29 @@
 # 🌿 Ingrevia: 내 피부를 위한 현명한 질문의 시작
 
-![ingrevia_mockup](https://raw.githubusercontent.com/tndls-dl/sesac-pjt-final/refs/heads/main/src/ingrevia.png)
+![ingrevia_mockup](https://raw.githubusercontent.com/tndls-dl/sesac-pjt-final/refs/heads/main/src/ingrevia_mockup.png)
 
 
 **Ingrevia**는 *Ingredient + Via*의 합성어로, 
 화장품 **성분(Ingredient)을 통해 올바른 길(Via)을 제시하는** 맞춤형 추천 에이전트입니다.
+
 
 ---
 
 ## ✨ 프로젝트 소개
 - **리뷰 평점이나 판매량이 아닌**, 제품의 **전성분 분석**을 기반으로 맞춤형 스킨케어 제품을 추천하는 것이 핵심입니다.  
 - 전성분은 INCI 표준명으로 통일한 뒤, 외부 자료를 통해 확인된 **효능 성분·주의 성분**을 매핑하여 사용자의 피부 고민과 타입에 따라 **효능 성분 기준**으로 제품을 추천합니다.
-
-
+<br>
 ### 🔑 주요 기능
 - **맞춤형 질문 응답**: 피부 타입, 피부 고민, 원하는 제품 종류를 입력하면 AI가 조건을 이해
 - **개인화 추천**: 조건에 맞는 제품을 찾아 추천하고 추천 이유를 함께 설명
 - **설명 가능한 근거 제공**: 추천 제품의 핵심 효능 성분과 주의 성분을 정리해 투명하게 제시
 - **확장성 있는 링크 제공**: 성분 배지를 클릭하면 해당 성분의 구글 검색 결과로 바로 이동
 - **직관적인 인터페이스**: 버튼 선택과 자유 채팅 모두 지원, 추천 카드를 시각적으로 확인 가능
-
-
+<br>
 ### ⚙️ 내부 구현
 - 전성분을 INCI 표준명으로 정리
 - 외부 자료 기반 효능/주의 성분 매핑
 - 유해성 점수를 활용해 더 안전한 제품 우선 추천
-
 
 ---
 ## 📁 프로젝트 구조
@@ -107,7 +105,6 @@ sesac-pjt-final/
 | [<img src="https://i.pinimg.com/736x/bd/05/6e/bd056e0ff7138b992464d96dfffe8ff7.jpg" height=150 width=150> <br/> @bse1120](https://github.com/bse1120) | [<img src="https://raw.githubusercontent.com/tndls-dl/TIL/refs/heads/main/images/4.jpg" height=150 width=150> <br/> @tndls-dl](https://github.com/tndls-dl) |
 
 </div>
-
 
 ### 🧩 역할 분담
 🤝 **함꼐 한 일**
